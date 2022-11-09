@@ -52,7 +52,7 @@ jobs:
           sudo apt-get install -y gcc-mingw-w64
       - name: Install dependencies for Mac OS target
         if: ${{ contains(matrix.target, 'darwin') }}
-        uses: mbround18/setup-osxcross@v1.1
+        uses: mbround18/setup-osxcross@v1
         with:
           osx-version: "12.3"
 
