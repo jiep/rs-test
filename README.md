@@ -7,7 +7,7 @@
   <strong>Implementation of `rs-test`</strong>
 
   <p>
-    <a href="https://github.com/jiep/rs-test/actions"><img src="https://github.com/jiep/rs-test/actions/workflows/rust.yml/badge.svg" alt="Build Status" /></a>
+    <a href="https://github.com/jiep/rs-test/actions"><img src="https://github.com/jiep/rs-test/actions/workflows/ci.yml/badge.svg" alt="Build Status" /></a>
   
     <a href="https://deps.rs/repo/github/jiep/rs-test"><img src="https://deps.rs/repo/github/jiep/rs-test/status.svg" alt="Dependency Status" /></a>
   </p>
