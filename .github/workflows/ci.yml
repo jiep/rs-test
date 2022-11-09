@@ -76,7 +76,9 @@ jobs:
           if [[ ${TARGET} == *"windows"* ]]; then
             BIN_NAME=${BIN}.exe
           fi
-          strip target/${TARGET}/release/${BIN_NAME}
+          if [[ ${TARGET} != *"windows"* ]]; then
+            strip target/${TARGET}/release/${BIN_NAME}
+          fi
           cd target/${TARGET}/release
           sha256sum ${BIN_NAME} | cut -f 1 -d " " > digest.sha256
           zip ../../../${BIN}-${TARGET}.zip ${BIN_NAME} digest.sha256
