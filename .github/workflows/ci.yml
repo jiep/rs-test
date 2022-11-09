@@ -76,7 +76,7 @@ jobs:
           if [[ ${TARGET} == *"windows"* ]]; then
             BIN_NAME=${BIN}.exe
           fi
-          if [[ ${TARGET} != *"windows"* ]]; then
+          if [[ ${TARGET} != *"darwin"* ]]; then
             strip target/${TARGET}/release/${BIN_NAME}
           fi
           cd target/${TARGET}/release
