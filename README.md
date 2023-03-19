@@ -7,6 +7,7 @@
   <strong>Implementation of `rs-test`</strong>
 
   [![ci](https://github.com/jiep/rs-test/actions/workflows/ci.yml/badge.svg)](https://github.com/jiep/rs-test/actions/workflows/ci.yml)
+  [![dependency status](https://deps.rs/repo/github/jiep/rs-test/status.svg)](https://deps.rs/repo/github/jiep/rs-test)
   
   <sub>Built with 🦀</sub>
 </div>
