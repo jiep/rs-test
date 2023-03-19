@@ -41,13 +41,13 @@ pub fn sha512(msg: &Vec<u8>) -> Vec<u8> {
 }
 
 fn bytes_to_long(arr: &[u8], offset: usize) -> i128 {
-    (((arr[offset] as i128) & 0x7F) << 56) as i128
-        | (((arr[offset + 1] as i128) & 0xFF) << 48) as i128
-        | (((arr[offset + 2] as i128) & 0xFF) << 40) as i128
-        | (((arr[offset + 3] as i128) & 0xFF) << 32) as i128
-        | (((arr[offset + 4] as i128) & 0xFF) << 24) as i128
-        | (((arr[offset + 5] as i128) & 0xFF) << 16) as i128
-        | (((arr[offset + 6] as i128) & 0xFF) << 8) as i128
+    (((arr[offset] as i128) & 0x7F) << 56)
+        | (((arr[offset + 1] as i128) & 0xFF) << 48)
+        | (((arr[offset + 2] as i128) & 0xFF) << 40)
+        | (((arr[offset + 3] as i128) & 0xFF) << 32)
+        | (((arr[offset + 4] as i128) & 0xFF) << 24)
+        | (((arr[offset + 5] as i128) & 0xFF) << 16)
+        | (((arr[offset + 6] as i128) & 0xFF) << 8)
         | ((arr[offset + 7] as i128) & 0xFF)
 }
 
