@@ -3,6 +3,9 @@ on: [push]
 name: ci
 
 jobs:
+  actionlint:
+    name: actionlint
+    uses: raven-actions/actionlint@v2
   build_and_test:
     name: Build binary, test, and check format
     runs-on: ubuntu-latest
