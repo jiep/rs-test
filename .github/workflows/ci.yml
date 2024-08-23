@@ -4,6 +4,7 @@ name: ci
 
 jobs:
   actionlint:
+    runs-on: ubuntu-latest
     steps:
       - name: actionlint
         uses: raven-actions/actionlint@v2
