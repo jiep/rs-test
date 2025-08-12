@@ -60,7 +60,7 @@ jobs:
           sudo apt-get install -y gcc-mingw-w64
       - name: Install dependencies for Mac OS target
         if: ${{ contains(matrix.target, 'darwin') }}
-        uses: mbround18/setup-osxcross@v1
+        uses: mbround18/setup-osxcross@2d414172ec5f74d494102538be9d31977d89e97d # v1.1
         with:
           osx-version: "12.3"
 
@@ -94,7 +94,7 @@ jobs:
 
       - name: Add to Releases
         if: startsWith(github.ref, 'refs/tags/')
-        uses: ncipollo/release-action@v1
+        uses: ncipollo/release-action@bcfe5470707e8832e12347755757cec0eb3c22af # v1.18.0
         with:
           artifacts: "*.zip"
           generateReleaseNotes: true
