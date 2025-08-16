@@ -86,7 +86,7 @@ jobs:
           BIN=rs-test
           BIN_NAME="$BIN"
           TARGET="${{ matrix.target }}"
-          VERSION="${GITHUB_REF#refs/tags/}"
+          VERSION="${{ github.ref_name }}"
           if [[ ${TARGET} == *"windows"* ]]; then
             BIN_NAME="${BIN}.exe"
           fi
