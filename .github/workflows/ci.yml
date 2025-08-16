@@ -82,19 +82,20 @@ jobs:
         shell: bash
         if: startsWith(github.ref, 'refs/tags/')
         run: |
+        
           BIN=rs-test
-          BIN_NAME=$BIN
-          TARGET=${{ matrix.target }}
+          BIN_NAME="$BIN"
+          TARGET="${{ matrix.target }}"
           VERSION="${GITHUB_REF#refs/tags/}"
           if [[ ${TARGET} == *"windows"* ]]; then
-            BIN_NAME=${BIN}.exe
+            BIN_NAME="${BIN}.exe"
           fi
           if [[ ${TARGET} != *"darwin"* ]]; then
-            strip target/${TARGET}/release/${BIN_NAME}
+            strip "target/${TARGET}/release/${BIN_NAME}"
           fi
-          cd target/${TARGET}/release
-          sha256sum ${BIN_NAME} | cut -f 1 -d " " > digest.sha256
-          zip ../../../${BIN}-${VERSION}-${TARGET}.zip ${BIN_NAME} digest.sha256
+          cd "target/${TARGET}/release"
+          sha256sum "${BIN_NAME}" | cut -f 1 -d " " > digest.sha256
+          zip "../../../${BIN}-${VERSION}-${TARGET}.zip" "${BIN_NAME}" digest.sha256
           cd -
 
       - name: Generate artifact attestation
