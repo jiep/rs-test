@@ -1,119 +1,130 @@
-on: [push]
+name: CI
 
-name: ci
+on: 
+  push:
+  pull_request:
 
 jobs:
-  actionlint:
+  lint-workflows:
+    name: Lint GitHub Actions workflows
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
-      - name: actionlint
-        uses: raven-actions/actionlint@3a24062651993d40fed1019b58ac6fbdfbf276cc # v2.0.1
-  build_and_test:
-    name: Build binary, test, and check format
-    runs-on: ubuntu-latest
-    needs: actionlint
-    steps:
-      - name: Checkout repo
+      - name: Checkout repository
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         
-      - name: Install Rust
+      - name: Lint workflow files
+        uses: raven-actions/actionlint@3a24062651993d40fed1019b58ac6fbdfbf276cc # v2.0.1
+  
+  build-and-test:
+    name: Build, test, and lint code
+    runs-on: ubuntu-latest
+    needs: lint-workflows
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        
+      - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
       
-      - name: Check code
+      - name: Check code compilation
         run: cargo check
 
-      - name: Check tests
+      - name: Run tests
         run: cargo test
       
-      - name: Check format
+      - name: Check code formatting
         run: cargo fmt --all -- --check
 
-      - name: Check Clippy
+      - name: Run Clippy lints
         run: cargo clippy -- -D warnings
 
   deploy:
-    name: Create release cross-compiling binaries
-    needs: build_and_test
+    name: Create release binaries
+    needs: build-and-test
     if: startsWith(github.ref, 'refs/tags/')
-    runs-on: ubuntu-latest
     permissions:
       contents: write
       id-token: write
       attestations: write
     strategy: 
       matrix:
-        target: [
-          x86_64-pc-windows-gnu,
-          x86_64-unknown-linux-gnu,
-          x86_64-apple-darwin
-        ]
+        include:
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
+            can-strip: true
+          
+          - target: x86_64-pc-windows-gnu
+            os: ubuntu-latest
+            can-strip: true
+            
+          - target: aarch64-apple-darwin
+            os: macos-latest  # Apple Silicon macOS
+            can-strip: false
+    
+    runs-on: ${{ matrix.os }}
+    
     steps:
-      - name: Checkout repo
+      - name: Checkout repository
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
-      - name: Install Rust
+      - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
           targets: ${{ matrix.target }}
 
-      - name: Install dependencies for Windows target
-        if: ${{ contains(matrix.target, 'windows') }}
-        run: |
-          sudo apt-get install -y gcc-mingw-w64
-      - name: Install dependencies for Mac OS target
-        if: ${{ contains(matrix.target, 'darwin') }}
-        uses: mbround18/setup-osxcross@2d414172ec5f74d494102538be9d31977d89e97d # v1.1
-        with:
-          osx-version: "12.3"
+      - name: Install cross-compilation dependencies (Linux/Windows)
+        if: matrix.os == 'ubuntu-latest' && contains(matrix.target, 'windows')
+        run: sudo apt-get update && sudo apt-get install -y gcc-mingw-w64
 
-      - name: Build target
-        if: ${{ contains(matrix.target, 'darwin') }}
-        run: |
-          export CC=o64-clang
-          export CXX=o64-clang++
-          cargo build --release --target ${{ matrix.target }}
-      - name: Build target
-        if: ${{ !contains(matrix.target, 'darwin') }}
+      - name: Build release binary
         run: cargo build --release --target ${{ matrix.target }}
 
-      - name: Package all targets
-        shell: bash
+      - name: Package release binary
         if: startsWith(github.ref, 'refs/tags/')
+        shell: bash
         run: |
-        
-          BIN=rs-test
-          BIN_NAME="$BIN"
+          BIN_NAME="rs-test"
           TARGET="${{ matrix.target }}"
           VERSION="${{ github.ref_name }}"
+          
+          # Set binary name with extension for Windows
           if [[ ${TARGET} == *"windows"* ]]; then
-            BIN_NAME="${BIN}.exe"
+            BIN_NAME="${BIN_NAME}.exe"
           fi
-          if [[ ${TARGET} != *"darwin"* ]]; then
+          
+          # Strip binary if supported
+          if [[ "${{ matrix.can-strip }}" == "true" ]]; then
             strip "target/${TARGET}/release/${BIN_NAME}"
           fi
+          
+          # Navigate to release directory
           cd "target/${TARGET}/release"
           
-          # Rename binary to include version and target
-          VERSIONED_BIN_NAME="${BIN}-${VERSION}-${TARGET}"
+          # Create versioned binary name
+          VERSIONED_BIN_NAME="rs-test-${VERSION}-${TARGET}"
           if [[ ${TARGET} == *"windows"* ]]; then
             VERSIONED_BIN_NAME="${VERSIONED_BIN_NAME}.exe"
           fi
+          
+          # Rename binary and create checksum
           mv "${BIN_NAME}" "${VERSIONED_BIN_NAME}"
           
-          sha256sum "${VERSIONED_BIN_NAME}" | cut -f 1 -d " " > digest.sha256
-          zip "../../../${BIN}-${VERSION}-${TARGET}.zip" "${VERSIONED_BIN_NAME}" digest.sha256
-          cd -
+          # Generate checksum (use appropriate command for OS)
+          if [[ "${{ matrix.os }}" == "macos-latest" ]]; then
+            shasum -a 256 "${VERSIONED_BIN_NAME}" | cut -f 1 -d " " > digest.sha256
+          else
+            sha256sum "${VERSIONED_BIN_NAME}" | cut -f 1 -d " " > digest.sha256
+          fi
+          
+          # Create release archive
+          zip "../../../rs-test-${VERSION}-${TARGET}.zip" "${VERSIONED_BIN_NAME}" digest.sha256
 
       - name: Generate artifact attestation
-        if: startsWith(github.ref, 'refs/tags/')
         uses: actions/attest-build-provenance@e8998f949152b193b063cb0ec769d69d929409be # v2.4.0
         with:
           subject-path: 'rs-test-${{ github.ref_name }}-${{ matrix.target }}.zip'
 
-      - name: Add to Releases
-        if: startsWith(github.ref, 'refs/tags/')
+      - name: Upload release artifacts
         uses: ncipollo/release-action@bcfe5470707e8832e12347755757cec0eb3c22af # v1.18.0
         with:
           artifacts: "*.zip"
