@@ -94,8 +94,16 @@ jobs:
             strip "target/${TARGET}/release/${BIN_NAME}"
           fi
           cd "target/${TARGET}/release"
-          sha256sum "${BIN_NAME}" | cut -f 1 -d " " > digest.sha256
-          zip "../../../${BIN}-${VERSION}-${TARGET}.zip" "${BIN_NAME}" digest.sha256
+          
+          # Rename binary to include version and target
+          VERSIONED_BIN_NAME="${BIN}-${VERSION}-${TARGET}"
+          if [[ ${TARGET} == *"windows"* ]]; then
+            VERSIONED_BIN_NAME="${VERSIONED_BIN_NAME}.exe"
+          fi
+          mv "${BIN_NAME}" "${VERSIONED_BIN_NAME}"
+          
+          sha256sum "${VERSIONED_BIN_NAME}" | cut -f 1 -d " " > digest.sha256
+          zip "../../../${BIN}-${VERSION}-${TARGET}.zip" "${VERSIONED_BIN_NAME}" digest.sha256
           cd -
 
       - name: Generate artifact attestation
