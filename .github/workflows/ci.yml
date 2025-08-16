@@ -80,8 +80,8 @@ jobs:
         run: cargo build --release --target ${{ matrix.target }}
 
       - name: Package release binary
-        shell: bash
         if: startsWith(github.ref, 'refs/tags/')
+        shell: bash
         run: |
           BIN_NAME="rs-test"
           TARGET="${{ matrix.target }}"
