@@ -26,12 +26,17 @@ jobs:
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
       
-      - name: Check, test, format and lint
-        run: |
-          cargo check
-          cargo test
-          cargo fmt --all -- --check
-          cargo clippy -- -D warnings
+      - name: Check code compilation
+        run: cargo check
+
+      - name: Run tests
+        run: cargo test
+      
+      - name: Check code formatting
+        run: cargo fmt --all -- --check
+
+      - name: Run Clippy lints
+        run: cargo clippy -- -D warnings
 
   deploy:
     name: Create release binaries
