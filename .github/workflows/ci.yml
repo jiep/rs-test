@@ -150,5 +150,4 @@ jobs:
           artifacts: "release-artifacts/*.zip"
           generateReleaseNotes: true
           immutableCreate: true
-          skipIfReleaseExists: true
           token: ${{ secrets.GITHUB_TOKEN }}
