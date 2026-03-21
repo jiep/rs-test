@@ -51,17 +51,17 @@ jobs:
         include:
           - target: x86_64-unknown-linux-gnu
             os: ubuntu-latest
-            can-strip: true
           
           - target: x86_64-pc-windows-gnu
             os: ubuntu-latest
-            can-strip: true
             
           - target: aarch64-apple-darwin
             os: macos-latest  # Apple Silicon macOS
-            can-strip: false
     
     runs-on: ${{ matrix.os }}
+    env:
+      VERSION: ${{ github.ref_name }}
+      BASE_BIN_NAME: rs-test
     
     steps:
       - name: Checkout repository
@@ -80,55 +80,44 @@ jobs:
         run: cargo build --release --target ${{ matrix.target }}
 
       - name: Package release binary
-        if: startsWith(github.ref, 'refs/tags/')
         shell: bash
         run: |
-          BIN_NAME="rs-test"
+          set -euo pipefail
+
           TARGET="${{ matrix.target }}"
-          VERSION="${{ github.ref_name }}"
-          
-          # Set binary name with extension for Windows
-          if [[ ${TARGET} == *"windows"* ]]; then
+          BIN_NAME="${BASE_BIN_NAME}"
+          VERSIONED_BIN_NAME="${BASE_BIN_NAME}-${VERSION}-${TARGET}"
+
+          if [[ "${TARGET}" == *"windows"* ]]; then
             BIN_NAME="${BIN_NAME}.exe"
-          fi
-          
-          # Strip binary if supported
-          if [[ "${{ matrix.can-strip }}" == "true" ]]; then
-            strip "target/${TARGET}/release/${BIN_NAME}"
-          fi
-          
-          # Navigate to release directory
-          cd "target/${TARGET}/release"
-          
-          # Create versioned binary name
-          VERSIONED_BIN_NAME="rs-test-${VERSION}-${TARGET}"
-          if [[ ${TARGET} == *"windows"* ]]; then
             VERSIONED_BIN_NAME="${VERSIONED_BIN_NAME}.exe"
           fi
-          
-          # Rename binary and create checksum
-          mv "${BIN_NAME}" "${VERSIONED_BIN_NAME}"
-          
-          # Generate checksum (use appropriate command for OS)
-          if [[ "${{ matrix.os }}" == "macos-latest" ]]; then
-            shasum -a 256 "${VERSIONED_BIN_NAME}" | cut -f 1 -d " " > digest.sha256
-          else
-            sha256sum "${VERSIONED_BIN_NAME}" | cut -f 1 -d " " > digest.sha256
+
+          if [[ "${{ matrix.os }}" != "macos-latest" ]]; then
+            strip "target/${TARGET}/release/${BIN_NAME}"
           fi
-          
-          # Create release archive
-          zip "../../../rs-test-${VERSION}-${TARGET}.zip" "${VERSIONED_BIN_NAME}" digest.sha256
+
+          cd "target/${TARGET}/release"
+          mv "${BIN_NAME}" "${VERSIONED_BIN_NAME}"
+
+          if [[ "${{ matrix.os }}" == "macos-latest" ]]; then
+            shasum -a 256 "${VERSIONED_BIN_NAME}" | cut -d " " -f 1 > digest.sha256
+          else
+            sha256sum "${VERSIONED_BIN_NAME}" | cut -d " " -f 1 > digest.sha256
+          fi
+
+          zip "../../../${BASE_BIN_NAME}-${VERSION}-${TARGET}.zip" "${VERSIONED_BIN_NAME}" digest.sha256
 
       - name: Generate artifact attestation
         uses: actions/attest-build-provenance@96278af6caaf10aea03fd8d33a09a777ca52d62f # v3.2.0
         with:
-          subject-path: 'rs-test-${{ github.ref_name }}-${{ matrix.target }}.zip'
+          subject-path: '${{ env.BASE_BIN_NAME }}-${{ env.VERSION }}-${{ matrix.target }}.zip'
 
       - name: Upload packaged artifact
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
         with:
           name: release-${{ matrix.target }}
-          path: rs-test-${{ github.ref_name }}-${{ matrix.target }}.zip
+          path: ${{ env.BASE_BIN_NAME }}-${{ env.VERSION }}-${{ matrix.target }}.zip
 
   publish-release:
     name: Publish immutable release
@@ -148,15 +137,8 @@ jobs:
         shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          TAG: ${{ github.ref_name }}
         run: |
-          TAG="${{ github.ref_name }}"
-
-          # Skip if release already exists to keep behavior immutable.
-          if gh release view "$TAG" --repo "${{ github.repository }}" >/dev/null 2>&1; then
-            echo "Release $TAG already exists. Skipping."
-            exit 0
-          fi
-
-          gh release create "$TAG" release-artifacts/*.zip \
-            --repo "${{ github.repository }}" \
-            --generate-notes
+          gh release view "$TAG" --repo "$REPO" >/dev/null 2>&1 || \
+          gh release create "$TAG" release-artifacts/*.zip --repo "$REPO" --generate-notes
