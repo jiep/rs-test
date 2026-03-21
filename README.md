@@ -27,13 +27,6 @@
 
 Download the latest version from [Releases](https://github.com/jiep/rs-test/releases).
 
-## Immutable releases
-
-This project is configured to publish release assets through a single final GitHub Actions job using immutable release creation.
-
-To enforce immutability at the repository level, enable Immutable releases in the repository settings and follow:
-[GitHub Docs: Immutable releases](https://docs.github.com/en/code-security/concepts/supply-chain-security/immutable-releases)
-
 ## Build from source
 
 1. Install [Rust](https://www.rust-lang.org/tools/install)
